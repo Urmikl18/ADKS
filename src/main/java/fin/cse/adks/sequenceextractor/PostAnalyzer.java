@@ -5,8 +5,15 @@ import java.util.ArrayList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import fin.cse.adks.utils.Pair;
@@ -70,6 +77,67 @@ public class PostAnalyzer {
             }
         }
         return null;
+    }
+
+    public void saveFilteredPosts(String exportPath) {
+        try {
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+
+            // root elements
+            Document doc = docBuilder.newDocument();
+            Element rootElement = doc.createElement("posts");
+            doc.appendChild(rootElement);
+
+            for (Pair<Post, Post> pair : this.qaList) {
+                // row elements
+                Element qPost = doc.createElement("row");
+                rootElement.appendChild(qPost);
+
+                // Q Post
+                qPost.setAttribute("Id", Integer.toString(pair.first.getId()));
+                qPost.setAttribute("PostTypeId", Integer.toString(pair.first.getType()));
+                qPost.setAttribute("AcceptedAnswerId", Integer.toString(pair.first.getAcceptedId()));
+                qPost.setAttribute("Body", pair.first.getBody());
+                String tags = "";
+                if (!pair.first.getTags().isEmpty()) {
+                    for (String tag : pair.first.getTags()) {
+                        tags += "<" + tag + ">";
+                    }
+                    qPost.setAttribute("Tags", tags);
+                }
+
+                // row elements
+                Element aPost = doc.createElement("row");
+                rootElement.appendChild(aPost);
+
+                // A Post
+                aPost.setAttribute("Id", Integer.toString(pair.second.getId()));
+                aPost.setAttribute("PostTypeId", Integer.toString(pair.second.getType()));
+                aPost.setAttribute("ParentId", Integer.toString(pair.second.getParentId()));
+                aPost.setAttribute("Body", pair.second.getBody());
+                if (!pair.second.getTags().isEmpty()) {
+                    tags = "";
+                    for (String tag : pair.second.getTags()) {
+                        tags += "<" + tag + ">";
+                    }
+                    aPost.setAttribute("Tags", tags);
+                }
+            }
+
+            // write the content into xml file
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(new File(exportPath));
+            transformer.transform(source, result);
+
+            System.out.println("File saved!");
+        } catch (ParserConfigurationException pce) {
+            pce.printStackTrace();
+        } catch (TransformerException tfe) {
+            tfe.printStackTrace();
+        }
     }
 
 }

@@ -11,12 +11,13 @@ import fin.cse.adks.utils.Pair;
 public class App {
     public static void main(String[] args) {
         System.out.println("Extracted posts:");
-        PostAnalyzer pa = new PostAnalyzer("/home/urmikl18/Documents/SoSe18/adks/implementation/posts2k.xml");
+        PostAnalyzer pa = new PostAnalyzer("/home/urmikl18/Documents/SoSe18/adks/implementation/filteredposts.xml");
         pa.extractQAPosts();
         ArrayList<Pair<Post, Post>> extractedPosts = pa.getQAList();
         for (Pair<Post, Post> pair : extractedPosts) {
             System.out.println("\t(Q: " + pair.first.getId() + " , A: " + pair.second.getId() + ")");
         }
+        pa.saveFilteredPosts("/home/urmikl18/Documents/SoSe18/adks/implementation/filteredposts.xml");
 
         System.out.println("==================================================");
 

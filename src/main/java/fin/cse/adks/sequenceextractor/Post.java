@@ -10,17 +10,17 @@ public class Post {
     public static final int QUESTION = 1;
 
     private int id;
+    private int type;
     private int acceptedId;
     private int parentId;
-    private int type;
     private String body;
     private ArrayList<String> tags;
 
-    public Post(String id, String acceptedId, String parentId, String type, String body, String tags) {
+    public Post(String id, String type, String acceptedId, String parentId, String body, String tags) {
         this.setId(id);
+        this.setType(type);
         this.setAcceptedId(acceptedId);
         this.setParentId(parentId);
-        this.setType(type);
         this.setBody(body);
         this.setTags(tags);
     }
@@ -29,16 +29,16 @@ public class Post {
         return this.id;
     }
 
+    public int getType() {
+        return this.type;
+    }
+
     public int getAcceptedId() {
         return this.acceptedId;
     }
 
     public int getParentId() {
         return this.parentId;
-    }
-
-    public int getType() {
-        return this.type;
     }
 
     public String getBody() {
@@ -51,6 +51,10 @@ public class Post {
 
     public void setId(String id) {
         this.id = Integer.parseInt(id);
+    }
+
+    public void setType(String type) {
+        this.type = Integer.parseInt(type);
     }
 
     public void setAcceptedId(String acceptedId) {
@@ -69,17 +73,16 @@ public class Post {
         }
     }
 
-    public void setType(String type) {
-        this.type = Integer.parseInt(type);
-    }
-
     public void setBody(String body) {
         this.body = body;
     }
 
     public void setTags(String tags) {
-        String tmp = tags.replaceAll("><", ",").replaceAll("<", "").replaceAll(">", "");
-        this.tags = new ArrayList<String>(Arrays.asList(tmp.split(",")));
+        this.tags = new ArrayList<String>();
+        if (!tags.isEmpty()) {
+            String tmp = tags.replaceAll("><", ",").replaceAll("<", "").replaceAll(">", "");
+            this.tags = new ArrayList<String>(Arrays.asList(tmp.split(",")));
+        }
     }
 
     public static Post fromXML(Node node) {
@@ -91,7 +94,7 @@ public class Post {
             String type = elem.getAttribute("PostTypeId");
             String body = elem.getAttribute("Body");
             String tags = elem.getAttribute("Tags");
-            return new Post(id, acceptedId, parentId, type, body, tags);
+            return new Post(id, type, acceptedId, parentId, body, tags);
         } else {
             return null;
         }
