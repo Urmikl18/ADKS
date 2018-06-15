@@ -21,6 +21,9 @@ import fin.cse.adks.models.Code;
 import fin.cse.adks.models.Sequence;
 import fin.cse.adks.utils.Pair;
 
+/**
+ * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
+ */
 public class SequenceExtractor {
     private String importPath;
     private String exportPath;
@@ -42,14 +45,18 @@ public class SequenceExtractor {
         return this.sequences;
     }
 
-    public void extractSeqeunces() {
+    /**
+     * Extracts sequences, respresented as edit scripts that transform the first
+     * component of the code pair into the second.
+     */
+    public void extractSequences() {
         try {
             final XMLEventReader reader = inFactory.createXMLEventReader(new FileInputStream(this.importPath));
             int progress = 1;
             while (reader.hasNext()) {
                 final XMLEvent event = reader.nextEvent();
                 if (event.isStartElement() && event.asStartElement().getName().getLocalPart().equals(ELEMENT_ROW)) {
-                    if (progress % 1000 == 0) {
+                    if (progress % 10000 == 0) {
                         System.out.format("Processed %d code pairs\n", progress);
                         System.out.format("Extracted %d sequences\n", this.sequences.size());
                     }
@@ -119,6 +126,6 @@ public class SequenceExtractor {
     }
 
     public static void main(String[] args) {
-        new SequenceExtractor(args[0], args[1]).extractSeqeunces();
+        new SequenceExtractor(args[0], args[1]).extractSequences();
     }
 }

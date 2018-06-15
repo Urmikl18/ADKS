@@ -11,7 +11,7 @@ import cn.edu.pku.sei.plde.qacrashfix.faultlocalization.NodeGenerator;
 /**
  * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
  */
-public class Code {
+public class Code implements Comparable<Code> {
     private String code;
     private Collection<String> tokens;
     private final boolean distinct = true;
@@ -59,5 +59,10 @@ public class Code {
             tokens.add(myNode.node.toString());
         }
         return this.distinct ? new TreeSet<String>(tokens) : tokens;
+    }
+
+    @Override
+    public int compareTo(Code other) {
+        return this.getCode().compareTo(other.getCode());
     }
 }

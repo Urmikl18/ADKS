@@ -4,7 +4,8 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.TreeSet;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
@@ -38,8 +39,8 @@ public class CodeExtractor {
 
     private static final String ELEMENT_ROW = "row";
 
-    private HashSet<Code> qCode;
-    private HashSet<Code> aCode;
+    private TreeSet<Code> qCode;
+    private TreeSet<Code> aCode;
 
     public CodeExtractor(String importPath, String exportPath) {
         this.importPath = importPath;
@@ -80,6 +81,8 @@ public class CodeExtractor {
                     }
                 }
             }
+            System.out.format("Processed %d post pairs\n", progress);
+            System.out.format("Extracted %d code pairs\n", this.codePairs.size());
             this.saveCodePairs();
         } catch (Exception e) {
             e.printStackTrace();
@@ -87,8 +90,8 @@ public class CodeExtractor {
         }
     }
 
-    private HashSet<Code> getCode(Post post) {
-        HashSet<Code> result = new HashSet<Code>();
+    private TreeSet<Code> getCode(Post post) {
+        TreeSet<Code> result = new TreeSet<Code>();
         Document doc = Jsoup.parse(post.getBody());
         Elements codes = doc.select("code");
         Elements pres = doc.select("pre");
@@ -101,7 +104,7 @@ public class CodeExtractor {
         return result;
     }
 
-    private ArrayList<Pair<Code, Code>> createCodePairs(HashSet<Code> qCode, HashSet<Code> aCode) {
+    private ArrayList<Pair<Code, Code>> createCodePairs(Collection<Code> qCode, Collection<Code> aCode) {
         ArrayList<Pair<Code, Code>> result = new ArrayList<Pair<Code, Code>>();
         for (Code qC : qCode) {
             for (Code aC : aCode) {
