@@ -54,9 +54,12 @@ public class SequenceExtractor {
                         System.out.format("Extracted %d sequences\n", this.sequences.size());
                     }
                     ++progress;
-                    Pair<Code, Code> codePair = this.extractCodePair(event);
-                    JDTTreeGenerator quesGenerator = new JDTTreeGenerator(codePair.first.getCode());
-                    JDTTreeGenerator ansGenerator = new JDTTreeGenerator(codePair.second.getCode());
+                    Pair<Integer, Pair<Code, Code>> codePair = this.extractCodePair(event);
+                    int id = codePair.first;
+                    Code qCode = codePair.second.first;
+                    Code aCode = codePair.second.second;
+                    JDTTreeGenerator quesGenerator = new JDTTreeGenerator(qCode.getCode());
+                    JDTTreeGenerator ansGenerator = new JDTTreeGenerator(aCode.getCode());
 
                     AnswerQuestionMapper aqMapper = new AnswerQuestionMapper(ansGenerator.getTree(),
                             quesGenerator.getTree());
@@ -64,10 +67,10 @@ public class SequenceExtractor {
                     try {
                         editScript = aqMapper.getEditingScripts();
                     } catch (Exception e) {
+                        // intentional continue: can't compute edit script
                         continue;
                     }
-                    this.sequences.add(new Sequence(editScript));
-
+                    this.sequences.add(new Sequence(id, editScript));
                 }
             }
             this.saveSequences();
@@ -80,10 +83,12 @@ public class SequenceExtractor {
         }
     }
 
-    private Pair<Code, Code> extractCodePair(final XMLEvent event) throws XMLStreamException {
+    private Pair<Integer, Pair<Code, Code>> extractCodePair(final XMLEvent event) throws XMLStreamException {
+        String id = event.asStartElement().getAttributeByName(new QName("Id")).getValue();
         String qCode = event.asStartElement().getAttributeByName(new QName("Before")).getValue();
         String aCode = event.asStartElement().getAttributeByName(new QName("After")).getValue();
-        return new Pair<Code, Code>(new Code(qCode), new Code(aCode));
+        return new Pair<Integer, Pair<Code, Code>>(Integer.parseInt(id),
+                new Pair<Code, Code>(new Code(qCode), new Code(aCode)));
     }
 
     private void saveSequences() throws XMLStreamException, IOException {
@@ -104,6 +109,7 @@ public class SequenceExtractor {
 
     private void saveSequence(final XMLStreamWriter writer, Sequence sequence) throws XMLStreamException {
         writer.writeStartElement(ELEMENT_ROW);
+        writer.writeAttribute("Id", Integer.toString(sequence.getId()));
         for (TreeEditAction operation : sequence.getEditScript()) {
             writer.writeStartElement(ELEMENT_OPERATION);
             writer.writeAttribute("Value", operation.toString());

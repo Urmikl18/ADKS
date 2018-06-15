@@ -121,7 +121,7 @@ public class CodeExtractor {
 
         for (int i = 0; i < this.codePairs.size(); ++i) {
             Pair<Code, Code> pair = this.codePairs.get(i);
-            this.saveCodePair(writer, pair.first, pair.second, i + 1);
+            this.saveCodePair(writer, i + 1, pair.first, pair.second);
         }
 
         writer.writeEndElement();
@@ -131,7 +131,7 @@ public class CodeExtractor {
         writer.close();
     }
 
-    private void saveCodePair(final XMLStreamWriter writer, Code before, Code after, int id) throws XMLStreamException {
+    private void saveCodePair(final XMLStreamWriter writer, int id, Code before, Code after) throws XMLStreamException {
         writer.writeStartElement(ELEMENT_ROW);
         writer.writeAttribute("Id", Integer.toString(id));
         writer.writeAttribute("Before", before.getCode());
