@@ -4,7 +4,6 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 
 import javax.xml.stream.XMLEventReader;
@@ -22,11 +21,11 @@ import org.jsoup.select.Elements;
 import fin.cse.adks.models.Code;
 import fin.cse.adks.models.Post;
 import fin.cse.adks.utils.Pair;
-import fin.cse.adks.utils.Tokenizer;
 
 /**
- * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de) CodeExtractor:
- *         extracts code pairs from a list of Q&A posts.
+ * Extracts code pairs from a list of Q&A posts.
+ * 
+ * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
  */
 public class CodeExtractor {
     private String importPath;
@@ -38,7 +37,6 @@ public class CodeExtractor {
     private final XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
 
     private static final String ELEMENT_ROW = "row";
-    public static final boolean DISTINCT_TOKENS = true;
 
     private HashSet<Code> qCode;
     private HashSet<Code> aCode;
@@ -107,7 +105,8 @@ public class CodeExtractor {
         ArrayList<Pair<Code, Code>> result = new ArrayList<Pair<Code, Code>>();
         for (Code qC : qCode) {
             for (Code aC : aCode) {
-                if (this.codeSimilarity(qC, aC) >= 0.75) {
+                double sim = qC.codeSimilarity(aC);
+                if (sim >= 0.75 && sim < 1) {
                     result.add(new Pair<Code, Code>(qC, aC));
                 }
             }
@@ -115,29 +114,14 @@ public class CodeExtractor {
         return result;
     }
 
-    private double codeSimilarity(Code c1, Code c2) {
-        Collection<String> t1 = Tokenizer.getTokens(c1, DISTINCT_TOKENS);
-        Collection<String> t2 = Tokenizer.getTokens(c2, DISTINCT_TOKENS);
-        final double c = 0.1;
-        double commonTokens = 0.0;
-        Collection<String> min = t1.size() > t2.size() ? t2 : t1;
-        Collection<String> max = t1.size() > t2.size() ? t1 : t2;
-
-        for (String token : min) {
-            if (max.contains(token)) {
-                commonTokens += 1.0;
-            }
-        }
-        return commonTokens / (c * t1.size() + (1 - c) * t2.size());
-    }
-
     private void saveCodePairs() throws XMLStreamException, IOException {
         final XMLStreamWriter writer = outFactory.createXMLStreamWriter(new FileWriter(this.exportPath));
         writer.writeStartDocument();
         writer.writeStartElement("codes");
 
-        for (Pair<Code, Code> pair : this.codePairs) {
-            saveCodePair(writer, pair.first, pair.second);
+        for (int i = 0; i < this.codePairs.size(); ++i) {
+            Pair<Code, Code> pair = this.codePairs.get(i);
+            this.saveCodePair(writer, pair.first, pair.second, i + 1);
         }
 
         writer.writeEndElement();
@@ -147,9 +131,9 @@ public class CodeExtractor {
         writer.close();
     }
 
-    private void saveCodePair(final XMLStreamWriter writer, Code before, Code after) throws XMLStreamException {
-        // save Q
+    private void saveCodePair(final XMLStreamWriter writer, Code before, Code after, int id) throws XMLStreamException {
         writer.writeStartElement(ELEMENT_ROW);
+        writer.writeAttribute("Id", Integer.toString(id));
         writer.writeAttribute("Before", before.getCode());
         writer.writeAttribute("After", after.getCode());
         writer.writeEndElement();
