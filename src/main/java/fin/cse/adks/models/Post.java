@@ -1,11 +1,16 @@
-package fin.cse.adks.sequenceextractor;
+package fin.cse.adks.models;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.Attribute;
+import javax.xml.stream.events.XMLEvent;
 
+/**
+ * @author Pavlo Shevchenko Data class to represent a StackOverflow post.
+ */
 public class Post {
     public static final int QUESTION = 1;
 
@@ -85,18 +90,16 @@ public class Post {
         }
     }
 
-    public static Post fromXML(Node node) {
-        if (node.getNodeType() == Node.ELEMENT_NODE) {
-            Element elem = (Element) node;
-            String id = elem.getAttribute("Id");
-            String acceptedId = elem.getAttribute("AcceptedAnswerId");
-            String parentId = elem.getAttribute("ParentId");
-            String type = elem.getAttribute("PostTypeId");
-            String body = elem.getAttribute("Body");
-            String tags = elem.getAttribute("Tags");
-            return new Post(id, type, acceptedId, parentId, body, tags);
-        } else {
-            return null;
-        }
+    public static Post fromXML(final XMLEvent event) throws XMLStreamException {
+        String id = event.asStartElement().getAttributeByName(new QName("Id")).getValue();
+        String type = event.asStartElement().getAttributeByName(new QName("PostTypeId")).getValue();
+        Attribute attAccId = event.asStartElement().getAttributeByName(new QName("AcceptedAnswerId"));
+        String acceptedId = attAccId != null ? attAccId.getValue() : null;
+        Attribute attParId = event.asStartElement().getAttributeByName(new QName("ParentId"));
+        String parentId = attParId != null ? attParId.getValue() : null;
+        String body = event.asStartElement().getAttributeByName(new QName("Body")).getValue();
+        Attribute attTags = event.asStartElement().getAttributeByName(new QName("Tags"));
+        String tags = attTags != null ? attTags.getValue() : "";
+        return new Post(id, type, acceptedId, parentId, body, tags);
     }
 }

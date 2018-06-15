@@ -1,5 +1,8 @@
-package fin.cse.adks.sequenceextractor;
+package fin.cse.adks.models;
 
+/**
+ * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
+ */
 public class Code {
     private String code;
 

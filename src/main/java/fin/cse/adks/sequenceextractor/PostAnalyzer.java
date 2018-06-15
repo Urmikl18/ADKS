@@ -1,77 +1,108 @@
 package fin.cse.adks.sequenceextractor;
 
-import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.events.XMLEvent;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-
+import fin.cse.adks.models.Post;
 import fin.cse.adks.utils.Pair;
 
+/**
+ * @author Pavlo Shevchenko
+ */
 public class PostAnalyzer {
-    private String postsPath;
+    private String importPath;
+    private String exportPath;
+    private int threshold;
+
+    private ArrayList<Post> questions;
     private ArrayList<Pair<Post, Post>> qaList;
+    private final XMLInputFactory inFactory = XMLInputFactory.newInstance();
+    private final XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
+    private static final String ELEMENT_ROW = "row";
 
-    public PostAnalyzer(String postsPath) {
-        this.postsPath = postsPath;
-        this.qaList = new ArrayList<Pair<Post, Post>>();
+    public PostAnalyzer(String importPath, String exportPath, int threshold) {
+        this.importPath = importPath;
+        this.exportPath = exportPath;
+        this.threshold = threshold;
+        this.questions = new ArrayList<Post>(1000000);
+        this.qaList = new ArrayList<Pair<Post, Post>>(1000000);
     }
 
-    public String getPostsPath() {
-        return this.postsPath;
-    }
-
+    /**
+     * @return a list of extracted questions and answers.
+     */
     public ArrayList<Pair<Post, Post>> getQAList() {
         return this.qaList;
     }
 
+    /**
+     * Extract Q&A posts from a .zip-archive and saves coresponding questions and
+     * answers.
+     */
     public void extractQAPosts() {
-        ArrayList<Post> questions = new ArrayList<Post>();
         try {
-            // open xml file with posts
-            File fXmlFile = new File(this.postsPath);
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse(fXmlFile);
-            doc.getDocumentElement().normalize();
+            ZipFile xmlZip = new ZipFile(this.importPath);
+            Enumeration<? extends ZipEntry> postsXML = xmlZip.entries();
+            int progress = 0;
+            while (postsXML.hasMoreElements()) {
+                ZipEntry postXML = postsXML.nextElement();
+                InputStream stream = xmlZip.getInputStream(postXML);
+                final XMLEventReader reader = inFactory.createXMLEventReader(stream);
 
-            // get posts
-            NodeList posts = doc.getElementsByTagName("row");
-            for (int i = 0; i < posts.getLength(); ++i) {
-                Post post = Post.fromXML(posts.item(i));
-                // question post
-                if (post.getType() == Post.QUESTION) {
-                    if (post.getTags().contains("java")) {
-                        questions.add(post);
+                while (reader.hasNext()) {
+                    final XMLEvent event = reader.nextEvent();
+                    if (event.isStartElement() && event.asStartElement().getName().getLocalPart().equals(ELEMENT_ROW)) {
+                        this.processPost(Post.fromXML(event));
+                        ++progress;
+                        if (progress % (threshold / 10) == 0) {
+                            System.out.format("Processed %d posts\n", progress);
+                            if (progress == threshold) {
+                                break;
+                            }
+                        }
                     }
                 }
-                // answer post
-                else {
-                    Post q = this.findCorrespondingQuestion(questions, post);
-                    // there is an accepted answer
-                    if (q != null) {
-                        this.qaList.add(new Pair<Post, Post>(q, post));
-                        questions.remove(q);
-                    }
-                }
+                savePosts();
             }
+            xmlZip.close();
         } catch (Exception e) {
             e.printStackTrace();
+            System.exit(1);
         }
     }
 
-    private Post findCorrespondingQuestion(ArrayList<Post> questions, Post answer) {
-        for (Post q : questions) {
+    private void processPost(Post post) throws XMLStreamException {
+        // question post
+        if (post.getType() == Post.QUESTION) {
+            if (post.getTags().contains("java")) {
+                this.questions.add(post);
+            }
+        }
+        // answer post
+        else {
+            Post q = this.findCorrespondingQuestion(post);
+            // there is an accepted answer
+            if (q != null) {
+                this.qaList.add(new Pair<Post, Post>(q, post));
+                this.questions.remove(q);
+            }
+        }
+    }
+
+    private Post findCorrespondingQuestion(Post answer) {
+        for (Post q : this.questions) {
             if (q.getAcceptedId() == answer.getId() && answer.getParentId() == q.getId()) {
                 return q;
             }
@@ -79,65 +110,54 @@ public class PostAnalyzer {
         return null;
     }
 
-    public void saveFilteredPosts(String exportPath) {
-        try {
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+    private void savePosts() throws XMLStreamException, IOException {
+        final XMLStreamWriter writer = outFactory.createXMLStreamWriter(new FileWriter(this.exportPath));
+        writer.writeStartDocument();
+        writer.writeStartElement("posts");
 
-            // root elements
-            Document doc = docBuilder.newDocument();
-            Element rootElement = doc.createElement("posts");
-            doc.appendChild(rootElement);
-
-            for (Pair<Post, Post> pair : this.qaList) {
-                // row elements
-                Element qPost = doc.createElement("row");
-                rootElement.appendChild(qPost);
-
-                // Q Post
-                qPost.setAttribute("Id", Integer.toString(pair.first.getId()));
-                qPost.setAttribute("PostTypeId", Integer.toString(pair.first.getType()));
-                qPost.setAttribute("AcceptedAnswerId", Integer.toString(pair.first.getAcceptedId()));
-                qPost.setAttribute("Body", pair.first.getBody());
-                String tags = "";
-                if (!pair.first.getTags().isEmpty()) {
-                    for (String tag : pair.first.getTags()) {
-                        tags += "<" + tag + ">";
-                    }
-                    qPost.setAttribute("Tags", tags);
-                }
-
-                // row elements
-                Element aPost = doc.createElement("row");
-                rootElement.appendChild(aPost);
-
-                // A Post
-                aPost.setAttribute("Id", Integer.toString(pair.second.getId()));
-                aPost.setAttribute("PostTypeId", Integer.toString(pair.second.getType()));
-                aPost.setAttribute("ParentId", Integer.toString(pair.second.getParentId()));
-                aPost.setAttribute("Body", pair.second.getBody());
-                if (!pair.second.getTags().isEmpty()) {
-                    tags = "";
-                    for (String tag : pair.second.getTags()) {
-                        tags += "<" + tag + ">";
-                    }
-                    aPost.setAttribute("Tags", tags);
-                }
-            }
-
-            // write the content into xml file
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            Transformer transformer = transformerFactory.newTransformer();
-            DOMSource source = new DOMSource(doc);
-            StreamResult result = new StreamResult(new File(exportPath));
-            transformer.transform(source, result);
-
-            System.out.println("File saved!");
-        } catch (ParserConfigurationException pce) {
-            pce.printStackTrace();
-        } catch (TransformerException tfe) {
-            tfe.printStackTrace();
+        for (Pair<Post, Post> pair : this.qaList) {
+            savePost(writer, pair.first, pair.second);
         }
+
+        writer.writeEndElement();
+        writer.writeEndDocument();
+
+        writer.flush();
+        writer.close();
     }
 
+    private void savePost(final XMLStreamWriter writer, Post question, Post answer) throws XMLStreamException {
+        // save Q
+        writer.writeStartElement("row");
+        writer.writeAttribute("Id", Integer.toString(question.getId()));
+        writer.writeAttribute("PostTypeId", Integer.toString(question.getType()));
+        writer.writeAttribute("AcceptedAnswerId", Integer.toString(question.getAcceptedId()));
+        writer.writeAttribute("Body", question.getBody());
+        String tags = "";
+        if (!question.getTags().isEmpty()) {
+            for (String tag : question.getTags()) {
+                tags += "<" + tag + ">";
+            }
+            writer.writeAttribute("Tags", tags);
+        }
+        writer.writeEndElement();
+        // save A
+        writer.writeStartElement("row");
+        writer.writeAttribute("Id", Integer.toString(answer.getId()));
+        writer.writeAttribute("PostTypeId", Integer.toString(answer.getType()));
+        writer.writeAttribute("ParentId", Integer.toString(answer.getParentId()));
+        writer.writeAttribute("Body", answer.getBody());
+        tags = "";
+        if (!answer.getTags().isEmpty()) {
+            for (String tag : answer.getTags()) {
+                tags += "<" + tag + ">";
+            }
+            writer.writeAttribute("Tags", tags);
+        }
+        writer.writeEndElement();
+    }
+
+    public static void main(String[] args) {
+        new PostAnalyzer(args[0], args[1], Integer.parseInt(args[2])).extractQAPosts();
+    }
 }
