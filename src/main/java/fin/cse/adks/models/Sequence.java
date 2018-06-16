@@ -44,12 +44,22 @@ public class Sequence {
                     links.get(i).add(editScript.get(j));
                 }
             }
-            System.out.println("------------------");
-            for (TreeEditAction action : links.get(i)) {
-                System.out.println(action.toString());
+        }
+
+        ArrayList<ArrayList<TreeEditAction>> result = new ArrayList<>();
+        for (int i = 0; i < links.size(); ++i) {
+            if (!links.get(i).isEmpty()) {
+                result.add(new ArrayList<>());
+                for (TreeEditAction action : links.get(i)) {
+                    result.get(result.size() - 1).add(action);
+                    for (int j = i + 1; j < links.size(); ++j) {
+                        links.get(j).remove(action);
+                    }
+                }
             }
         }
-        return links;
+
+        return result;
     }
 
     private boolean areLinked(TreeEditAction m1, TreeEditAction m2) {
@@ -57,11 +67,12 @@ public class Sequence {
             TreeNode t1 = getTarget(m1);
             TreeNode s2 = getSource(m2);
             TreeNode t2 = getTarget(m2);
-            if (t1 != null && t2 != null && s2 != null) {
-                if (t1.isLeaf() && t2.isLeaf()) {
-                    return t1.getParent().equals(s2.getParent()) || t1.getParent().equals(t2.getParent());
+            if (t1 != null) {
+                if (t1.isLeaf() && t2 != null && t2.isLeaf()) {
+                    return (s2 != null && t1.getParent().equals(s2.getParent()))
+                            || (t2 != null && t1.getParent().equals(t2.getParent()));
                 } else {
-                    return t1.equals(s2.getParent()) || t1.equals(t2.getParent());
+                    return (s2 != null && t1.equals(s2.getParent())) || (t2 != null && t1.equals(t2.getParent()));
                 }
             }
         }
