@@ -56,7 +56,7 @@ public class SequenceExtractor {
             while (reader.hasNext()) {
                 final XMLEvent event = reader.nextEvent();
                 if (event.isStartElement() && event.asStartElement().getName().getLocalPart().equals(ELEMENT_ROW)) {
-                    if (progress % 10000 == 0) {
+                    if (progress % 1000 == 0) {
                         System.out.format("Processed %d code pairs\n", progress);
                         System.out.format("Extracted %d sequences\n", this.sequences.size());
                     }
@@ -80,6 +80,7 @@ public class SequenceExtractor {
                     this.sequences.add(new Sequence(id, editScript));
                 }
             }
+            System.out.format("Extracted %d sequences\n", this.sequences.size());
             this.saveSequences();
         } catch (XMLStreamException e) {
             e.printStackTrace();
