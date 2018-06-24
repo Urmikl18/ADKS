@@ -1,94 +1,68 @@
 package fin.cse.adks.sequenceextractor;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-import java.util.Map.Entry;
+
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
 import cn.edu.pku.sei.plde.qacrashfix.tree.edits.DeleteAction;
 import cn.edu.pku.sei.plde.qacrashfix.tree.edits.InsertAction;
 import cn.edu.pku.sei.plde.qacrashfix.tree.edits.MoveAction;
-// import ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim.*;
-import cn.edu.pku.sei.plde.qacrashfix.tree.edits.TreeEditAction;
+import fin.cse.adks.models.Modification;
 import fin.cse.adks.models.Sequence;
+import fin.cse.adks.utils.XMLTags;
 import jp.ac.titech.cs.se.sparesort.SequenceDatabase;
 import jp.ac.titech.cs.se.sparesort.bide.RecursiveBIDE;
 
 public class SequenceMiner {
     private String importPath;
     private String exportPath;
-    private double minsup;
+    private int minsup;
 
-    private Map<String, Integer> itemId;
-    private Map<Integer, TreeEditAction> actionId;
+    private ArrayList<List<Modification>> repairPatterns;
 
-    // private ArrayList<Sequences> repairPatterns;
-    private ArrayList<List<Integer>> repairPatterns;
+    private final XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
 
-    public SequenceMiner(String importPath, String exportPath, double minsup) {
+    public SequenceMiner(String importPath, String exportPath, int minsup) {
         this.importPath = importPath;
         this.exportPath = exportPath;
         this.minsup = minsup;
-        this.itemId = new TreeMap<>();
-        this.actionId = new TreeMap<>();
-        this.repairPatterns = new ArrayList<>(10000);
+        this.repairPatterns = new ArrayList<>(150);
     }
 
     public void mineRepairPatterns() {
         SequenceExtractor se = new SequenceExtractor(this.importPath);
         se.extractSequences();
         ArrayList<ArrayList<Sequence>> categories = se.getCategories();
-        this.extractItemIds(categories);
         int k = 0;
-        int p = 0;
         for (ArrayList<Sequence> category : categories) {
             if (isWorthMining(category)) {
-                // SequenceDatabase sdb = this.categoryToSdb(category);
-                // AlgoBIDEPlus miner = new AlgoBIDEPlus(this.minsup);
-                // Sequences patterns = miner.runAlgorithm(sdb);
-                // System.out.println(patterns.toString(sdb.size()));
-                // this.repairPatterns.add(patterns);
-                // System.out.format("%d SDBs analyzed\n", k++);
-                // System.out.format("%d patterns mined\n", this.repairPatterns.size());
-                SequenceDatabase<Integer> sdb = this.categoryToSdb(category);
-                sdb.setMiningStrategy(new RecursiveBIDE<Integer>());
+                SequenceDatabase<Modification> sdb = this.categoryToSdb(category);
+                sdb.setMiningStrategy(new RecursiveBIDE<Modification>());
                 try {
-                    Map<List<Integer>, Integer> result = sdb
-                            .mineFrequentClosedSequences((int) (category.size() * this.minsup));
+                    Map<List<Modification>, Integer> result = sdb.mineFrequentClosedSequences(this.minsup);
                     k++;
-                    p += result.keySet().size();
                     this.repairPatterns.addAll(result.keySet());
-
                 } catch (Exception e) {
                     continue;
                 }
             }
         }
         System.out.format("Analyzed %d SDBs\n", k);
-        System.out.format("Mined %d patterns\n", p);
-        for (List<Integer> pattern : this.repairPatterns) {
-            System.out.println("--------------------------");
-            for (Integer id : pattern) {
-                System.out.format("%d: %s\n", id, actionId.get(id).toString());
-            }
-        }
-    }
-
-    private void extractItemIds(ArrayList<ArrayList<Sequence>> categories) {
-        int id = 0;
-        for (ArrayList<Sequence> category : categories) {
-            for (Sequence sequence : category) {
-                for (TreeEditAction modification : sequence.getLinkedModificationSequence()) {
-                    String key = modification.toString();
-                    if (!this.itemId.containsKey(key)) {
-                        this.itemId.put(key, id);
-                        this.actionId.put(id, modification);
-                        ++id;
-                    }
-                }
-            }
+        System.out.format("Mined %d patterns\n", this.repairPatterns.size());
+        try {
+            this.savePatterns();
+        } catch (XMLStreamException e) {
+            e.printStackTrace();
+            System.exit(1);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
         }
     }
 
@@ -96,59 +70,56 @@ public class SequenceMiner {
         boolean cond1 = category.size() < 5;
         Sequence representative = category.get(0);
         long moveActions = representative.getLinkedModificationSequence().stream()
-                .filter(action -> action instanceof MoveAction).count();
+                .filter(modification -> modification.getTreeEditAction() instanceof MoveAction).count();
         long deleteActions = representative.getLinkedModificationSequence().stream()
-                .filter(action -> action instanceof DeleteAction).count();
+                .filter(modification -> modification.getTreeEditAction() instanceof DeleteAction).count();
         long insertActions = representative.getLinkedModificationSequence().stream()
-                .filter(action -> action instanceof InsertAction).count();
+                .filter(modification -> modification.getTreeEditAction() instanceof InsertAction).count();
         boolean cond2 = (moveActions + deleteActions) == representative.getLinkedModificationSequence().size();
         boolean cond3 = deleteActions > 2 || insertActions > 2;
         return !(cond1 || cond2 || cond3);
     }
 
-    private SequenceDatabase<Integer> categoryToSdb(ArrayList<Sequence> category) {
-        SequenceDatabase<Integer> sdb = new SequenceDatabase<>();
+    private SequenceDatabase<Modification> categoryToSdb(ArrayList<Sequence> category) {
+        SequenceDatabase<Modification> sdb = new SequenceDatabase<>();
         for (Sequence sequence : category) {
-            ArrayList<Integer> intSeq = new ArrayList<>(sequence.getLinkedModificationSequence().size());
-            for (TreeEditAction modification : sequence.getLinkedModificationSequence()) {
-                intSeq.add(this.itemId.get(modification.toString()));
-            }
-            sdb.addSequence(intSeq);
+            sdb.addSequence(sequence.getLinkedModificationSequence());
         }
         return sdb;
     }
 
-    // private SequenceDatabase categoryToSdb(ArrayList<Sequence> category) {
-    // SequenceDatabase sdb = new SequenceDatabase();
-    // for (int i = 0; i < category.size(); ++i) {
-    // sdb.addSequence(this.mySeqToSpmfSeq(i, category.get(i)));
-    // }
-    // return sdb;
-    // }
+    private void savePatterns() throws XMLStreamException, IOException {
+        final XMLStreamWriter writer = outFactory.createXMLStreamWriter(new FileWriter(this.exportPath));
+        writer.writeStartDocument();
+        writer.writeStartElement(XMLTags.ELEMENT_PATTERNS);
 
-    // private
-    // ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim.Sequence
-    // mySeqToSpmfSeq(int id,
-    // Sequence sequence) {
-    // ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim.Sequence
-    // spmfSeq = new
-    // ca.pfv.spmf.algorithms.sequentialpatterns.fournier2008_seqdim.Sequence(
-    // id);
-    // Itemset itemset =
-    // this.linkedModToItemset(sequence.getLinkedModificationSequence());
-    // spmfSeq.addItemset(itemset);
-    // return spmfSeq;
-    // }
+        for (List<Modification> pattern : this.repairPatterns) {
+            this.savePattern(writer, pattern);
+        }
 
-    // private Itemset linkedModToItemset(ArrayList<TreeEditAction> linkedMod) {
-    // Itemset itemset = new Itemset();
-    // for (TreeEditAction modification : linkedMod) {
-    // itemset.addItem(new ItemSimple(this.itemId.get(modification.toString())));
-    // }
-    // return itemset;
-    // }
+        writer.writeEndElement();
+        writer.writeEndDocument();
+
+        writer.flush();
+        writer.close();
+    }
+
+    private void savePattern(final XMLStreamWriter writer, List<Modification> pattern) throws XMLStreamException {
+        writer.writeStartElement(XMLTags.ELEMENT_ROW);
+        String codeIds = "";
+        for (Modification modification : pattern) {
+            codeIds += modification.getCodeId() + " ";
+        }
+        writer.writeAttribute(XMLTags.ATTRIBUTE_CODE_ID, codeIds.trim());
+        for (Modification modification : pattern) {
+            writer.writeStartElement(XMLTags.ELEMENT_MOD);
+            writer.writeAttribute(XMLTags.ATTRIBUTE_VALUE, modification.toString());
+            writer.writeEndElement();
+        }
+        writer.writeEndElement();
+    }
 
     public static void main(String[] args) {
-        new SequenceMiner(args[0], args[1], Double.parseDouble(args[2])).mineRepairPatterns();
+        new SequenceMiner(args[0], args[1], Integer.parseInt(args[2])).mineRepairPatterns();
     }
 }

@@ -22,6 +22,7 @@ import org.jsoup.select.Elements;
 import fin.cse.adks.models.Code;
 import fin.cse.adks.models.Post;
 import fin.cse.adks.utils.Pair;
+import fin.cse.adks.utils.XMLTags;
 
 /**
  * Extracts code pairs from a list of Q&A posts.
@@ -36,8 +37,6 @@ public class CodeExtractor {
 
     private final XMLInputFactory inFactory = XMLInputFactory.newInstance();
     private final XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
-
-    private static final String ELEMENT_ROW = "row";
 
     private TreeSet<Code> qCode;
     private TreeSet<Code> aCode;
@@ -66,7 +65,8 @@ public class CodeExtractor {
             int progress = 0;
             while (reader.hasNext()) {
                 final XMLEvent event = reader.nextEvent();
-                if (event.isStartElement() && event.asStartElement().getName().getLocalPart().equals(ELEMENT_ROW)) {
+                if (event.isStartElement()
+                        && event.asStartElement().getName().getLocalPart().equals(XMLTags.ELEMENT_ROW)) {
                     Post post = Post.fromXML(event);
                     if (post.getType() == Post.QUESTION) {
                         this.qCode = this.getCode(post);
@@ -120,7 +120,7 @@ public class CodeExtractor {
     private void saveCodePairs() throws XMLStreamException, IOException {
         final XMLStreamWriter writer = outFactory.createXMLStreamWriter(new FileWriter(this.exportPath));
         writer.writeStartDocument();
-        writer.writeStartElement("codes");
+        writer.writeStartElement(XMLTags.ELEMENT_CODES);
 
         for (int i = 0; i < this.codePairs.size(); ++i) {
             Pair<Code, Code> pair = this.codePairs.get(i);
@@ -135,10 +135,10 @@ public class CodeExtractor {
     }
 
     private void saveCodePair(final XMLStreamWriter writer, int id, Code before, Code after) throws XMLStreamException {
-        writer.writeStartElement(ELEMENT_ROW);
-        writer.writeAttribute("Id", Integer.toString(id));
-        writer.writeAttribute("Before", before.getCode());
-        writer.writeAttribute("After", after.getCode());
+        writer.writeStartElement(XMLTags.ELEMENT_ROW);
+        writer.writeAttribute(XMLTags.ATTRIBUTE_ID, Integer.toString(id));
+        writer.writeAttribute(XMLTags.ATTRIBUTE_BUGGY, before.getCode());
+        writer.writeAttribute(XMLTags.ATTRIBUTE_FIXED, after.getCode());
         writer.writeEndElement();
     }
 

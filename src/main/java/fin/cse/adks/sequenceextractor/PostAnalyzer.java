@@ -17,6 +17,7 @@ import javax.xml.stream.events.XMLEvent;
 
 import fin.cse.adks.models.Post;
 import fin.cse.adks.utils.Pair;
+import fin.cse.adks.utils.XMLTags;
 
 /**
  * @author Pavlo Shevchenko
@@ -30,7 +31,6 @@ public class PostAnalyzer {
     private ArrayList<Pair<Post, Post>> qaList;
     private final XMLInputFactory inFactory = XMLInputFactory.newInstance();
     private final XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
-    private static final String ELEMENT_ROW = "row";
 
     public PostAnalyzer(String importPath, String exportPath, int threshold) {
         this.importPath = importPath;
@@ -63,7 +63,8 @@ public class PostAnalyzer {
 
                 while (reader.hasNext()) {
                     final XMLEvent event = reader.nextEvent();
-                    if (event.isStartElement() && event.asStartElement().getName().getLocalPart().equals(ELEMENT_ROW)) {
+                    if (event.isStartElement()
+                            && event.asStartElement().getName().getLocalPart().equals(XMLTags.ELEMENT_ROW)) {
                         this.processPost(Post.fromXML(event));
                         ++progress;
                         if (progress % (threshold / 10) == 0) {
@@ -113,7 +114,7 @@ public class PostAnalyzer {
     private void savePosts() throws XMLStreamException, IOException {
         final XMLStreamWriter writer = outFactory.createXMLStreamWriter(new FileWriter(this.exportPath));
         writer.writeStartDocument();
-        writer.writeStartElement("posts");
+        writer.writeStartElement(XMLTags.ELEMENT_POSTS);
 
         for (Pair<Post, Post> pair : this.qaList) {
             savePost(writer, pair.first, pair.second);
@@ -128,31 +129,31 @@ public class PostAnalyzer {
 
     private void savePost(final XMLStreamWriter writer, Post question, Post answer) throws XMLStreamException {
         // save Q
-        writer.writeStartElement("row");
-        writer.writeAttribute("Id", Integer.toString(question.getId()));
-        writer.writeAttribute("PostTypeId", Integer.toString(question.getType()));
-        writer.writeAttribute("AcceptedAnswerId", Integer.toString(question.getAcceptedId()));
-        writer.writeAttribute("Body", question.getBody());
+        writer.writeStartElement(XMLTags.ELEMENT_ROW);
+        writer.writeAttribute(XMLTags.ATTRIBUTE_ID, Integer.toString(question.getId()));
+        writer.writeAttribute(XMLTags.ATTRIBUTE_POST_TYPE_ID, Integer.toString(question.getType()));
+        writer.writeAttribute(XMLTags.ATTRIBUTE_ACCEPTED_ANSWER_ID, Integer.toString(question.getAcceptedId()));
+        writer.writeAttribute(XMLTags.ATTRIBUTE_BODY, question.getBody());
         String tags = "";
         if (!question.getTags().isEmpty()) {
             for (String tag : question.getTags()) {
                 tags += "<" + tag + ">";
             }
-            writer.writeAttribute("Tags", tags);
+            writer.writeAttribute(XMLTags.ATTRIBUTE_TAGS, tags);
         }
         writer.writeEndElement();
         // save A
-        writer.writeStartElement("row");
-        writer.writeAttribute("Id", Integer.toString(answer.getId()));
-        writer.writeAttribute("PostTypeId", Integer.toString(answer.getType()));
-        writer.writeAttribute("ParentId", Integer.toString(answer.getParentId()));
-        writer.writeAttribute("Body", answer.getBody());
+        writer.writeStartElement(XMLTags.ELEMENT_ROW);
+        writer.writeAttribute(XMLTags.ATTRIBUTE_ID, Integer.toString(answer.getId()));
+        writer.writeAttribute(XMLTags.ATTRIBUTE_POST_TYPE_ID, Integer.toString(answer.getType()));
+        writer.writeAttribute(XMLTags.ATTRIBUTE_PARENT_ID, Integer.toString(answer.getParentId()));
+        writer.writeAttribute(XMLTags.ATTRIBUTE_BODY, answer.getBody());
         tags = "";
         if (!answer.getTags().isEmpty()) {
             for (String tag : answer.getTags()) {
                 tags += "<" + tag + ">";
             }
-            writer.writeAttribute("Tags", tags);
+            writer.writeAttribute(XMLTags.ATTRIBUTE_TAGS, tags);
         }
         writer.writeEndElement();
     }
