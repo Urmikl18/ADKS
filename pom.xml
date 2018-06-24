@@ -30,11 +30,6 @@
       <version>0.0.1-SNAPSHOT</version>
     </dependency>
 		<dependency>
-      <groupId>fin.cse.adks</groupId>
-      <artifactId>spmf</artifactId>
-      <version>1.0</version>
-    </dependency>
-		<dependency>
       <groupId>jp.ac.titech.cs.se</groupId>
 			<artifactId>sparesort</artifactId>
 			<version>0.2.0</version>
