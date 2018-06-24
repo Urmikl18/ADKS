@@ -1,5 +1,10 @@
 package fin.cse.adks.utils;
 
+/**
+ * Contains all relevant XML tags and attributes.
+ * 
+ * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
+ */
 public class XMLTags {
     // elements
     public static final String ELEMENT_ROW = "row";

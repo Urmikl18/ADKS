@@ -22,6 +22,9 @@ import fin.cse.adks.utils.Pair;
 import fin.cse.adks.utils.XMLTags;
 
 /**
+ * Extracts sequences from code samples and clusters them to form categories as
+ * described in SOFix.
+ * 
  * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
  */
 public class SequenceExtractor {

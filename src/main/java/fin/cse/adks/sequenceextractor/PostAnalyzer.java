@@ -20,7 +20,9 @@ import fin.cse.adks.utils.Pair;
 import fin.cse.adks.utils.XMLTags;
 
 /**
- * @author Pavlo Shevchenko
+ * Filters out irrelevant posts from the StackOverflow archive.
+ * 
+ * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
  */
 public class PostAnalyzer {
     private String importPath;

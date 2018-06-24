@@ -2,6 +2,11 @@ package fin.cse.adks.models;
 
 import java.util.List;
 
+/**
+ * Represents a SOFix sequence: a set of linked modifications.
+ * 
+ * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
+ */
 public class Sequence {
     private List<Modification> linkedModificationSequence;
 
@@ -13,6 +18,11 @@ public class Sequence {
         return this.linkedModificationSequence;
     }
 
+    /**
+     * @param other a sequence to be checked.
+     * @return <b>true</b> if current sequence is isomorph to the <b>other</b> as
+     *         defined in SOFix
+     */
     public boolean isIsomorphTo(Sequence other) {
         int n1 = this.getLinkedModificationSequence().size();
         int n2 = other.getLinkedModificationSequence().size();

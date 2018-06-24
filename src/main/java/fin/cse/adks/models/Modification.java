@@ -3,6 +3,11 @@ package fin.cse.adks.models;
 import cn.edu.pku.sei.plde.qacrashfix.tree.TreeNode;
 import cn.edu.pku.sei.plde.qacrashfix.tree.edits.*;
 
+/**
+ * A wrapper for modifications defined in QACrashFix.
+ * 
+ * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
+ */
 public class Modification implements Comparable<Modification> {
     private int codeId;
     private TreeEditAction action;
@@ -20,6 +25,11 @@ public class Modification implements Comparable<Modification> {
         return this.action;
     }
 
+    /**
+     * @param other modification possibly linked to the current.
+     * @return <b>true</b> if current modification is linked to the other as defined
+     *         in SOFix.
+     */
     public boolean isLinkedTo(Modification other) {
         TreeEditAction m1 = this.getTreeEditAction();
         TreeEditAction m2 = other.getTreeEditAction();

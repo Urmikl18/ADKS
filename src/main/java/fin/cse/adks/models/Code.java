@@ -9,6 +9,8 @@ import cn.edu.pku.sei.plde.qacrashfix.faultlocalization.MyNode;
 import cn.edu.pku.sei.plde.qacrashfix.faultlocalization.NodeGenerator;
 
 /**
+ * Represents a code sample.
+ * 
  * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
  */
 public class Code implements Comparable<Code> {
@@ -29,6 +31,10 @@ public class Code implements Comparable<Code> {
         return this.tokens;
     }
 
+    /**
+     * @param other a code to compute similarity with.
+     * @return a text similarit value, as defined in SOFix.
+     */
     public double codeSimilarity(Code other) {
         Collection<String> t1 = this.getTokens();
         Collection<String> t2 = other.getTokens();

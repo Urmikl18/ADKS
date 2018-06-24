@@ -19,6 +19,11 @@ import fin.cse.adks.utils.XMLTags;
 import jp.ac.titech.cs.se.sparesort.SequenceDatabase;
 import jp.ac.titech.cs.se.sparesort.bide.RecursiveBIDE;
 
+/**
+ * A wrapper for a BIDE sequence miner.
+ * 
+ * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
+ */
 public class SequenceMiner {
     private String importPath;
     private String exportPath;
@@ -35,6 +40,10 @@ public class SequenceMiner {
         this.repairPatterns = new ArrayList<>(150);
     }
 
+    /**
+     * Filters out irrelevant categories as defined in SOFix and mines repair
+     * patterns for each category.
+     */
     public void mineRepairPatterns() {
         SequenceExtractor se = new SequenceExtractor(this.importPath);
         se.extractSequences();

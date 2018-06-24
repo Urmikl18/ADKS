@@ -9,7 +9,9 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.XMLEvent;
 
 /**
- * @author Pavlo Shevchenko Data class to represent a StackOverflow post.
+ * Data class to represent a StackOverflow post.
+ * 
+ * @author Pavlo Shevchenko (pavlo.shevchenko@st.ovgu.de)
  */
 public class Post {
     public static final int QUESTION = 1;
@@ -90,6 +92,10 @@ public class Post {
         }
     }
 
+    /**
+     * @param event XML element with post data.
+     * @return a new post with data from XML.
+     */
     public static Post fromXML(final XMLEvent event) throws XMLStreamException {
         String id = event.asStartElement().getAttributeByName(new QName("Id")).getValue();
         String type = event.asStartElement().getAttributeByName(new QName("PostTypeId")).getValue();
