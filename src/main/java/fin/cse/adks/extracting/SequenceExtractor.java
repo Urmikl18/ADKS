@@ -1,4 +1,4 @@
-package fin.cse.adks.sequenceextractor;
+package fin.cse.adks.extracting;
 
 import java.io.FileInputStream;
 import java.io.IOException;

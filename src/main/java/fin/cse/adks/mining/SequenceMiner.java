@@ -1,4 +1,4 @@
-package fin.cse.adks.sequenceextractor;
+package fin.cse.adks.mining;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -13,6 +13,7 @@ import javax.xml.stream.XMLStreamWriter;
 import cn.edu.pku.sei.plde.qacrashfix.tree.edits.DeleteAction;
 import cn.edu.pku.sei.plde.qacrashfix.tree.edits.InsertAction;
 import cn.edu.pku.sei.plde.qacrashfix.tree.edits.MoveAction;
+import fin.cse.adks.extracting.SequenceExtractor;
 import fin.cse.adks.models.Modification;
 import fin.cse.adks.models.Sequence;
 import fin.cse.adks.utils.XMLTags;
