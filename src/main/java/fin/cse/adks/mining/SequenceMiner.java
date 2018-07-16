@@ -130,6 +130,12 @@ public class SequenceMiner {
     }
 
     public static void main(String[] args) {
+        if (args.length != 3) {
+            System.out.println("Wrong parameters! Try again:");
+            System.out.println(
+                    "java -jar adks_sequence_miner.jar [path_to_xml_with_code_snippets] [path_to_xml_to_store_patterns] [absolute_minsup]");
+            return;
+        }
         new SequenceMiner(args[0], args[1], Integer.parseInt(args[2])).mineRepairPatterns();
     }
 }

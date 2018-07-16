@@ -143,6 +143,12 @@ public class CodeExtractor {
     }
 
     public static void main(String[] args) {
+        if (args.length != 2) {
+            System.out.println("Wrong parameters! Try again:");
+            System.out.println(
+                    "java -jar adks_code_extractor.jar [path_to_xml_with_posts] [path_to_xml_to_store_code_snippets]");
+            return;
+        }
         new CodeExtractor(args[0], args[1]).extractCodePairs();
     }
 

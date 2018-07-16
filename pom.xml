@@ -80,7 +80,7 @@
 					</descriptorRefs>
 					<archive>
 					  <manifest>
-						  <mainClass>fin.cse.adks.SequenceMiner</mainClass>
+						  <mainClass>fin.cse.adks.mining.SequenceMiner</mainClass>
 					  </manifest>
 					</archive>
 				</configuration>

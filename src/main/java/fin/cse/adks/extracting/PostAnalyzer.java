@@ -161,6 +161,12 @@ public class PostAnalyzer {
     }
 
     public static void main(String[] args) {
+        if (args.length != 3) {
+            System.out.println("Wrong parameters! Try again:");
+            System.out.println(
+                    "java -jar adks_post_analyzer.jar [path_to_stackoverflow_zip] [path_to_xml_to_store_extracted_posts] [threshold_number_of_posts]");
+            return;
+        }
         new PostAnalyzer(args[0], args[1], Integer.parseInt(args[2])).extractQAPosts();
     }
 }
